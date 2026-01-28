@@ -152,6 +152,44 @@ def query_trades() -> list[dict[str, Any]]:
 
 
 @mcp.tool
+def query_abbrs(keys: str = "") -> dict[str, Any]:
+    """Query abbreviation mappings for field names.
+
+    This tool helps you understand the meaning of abbreviated field names
+    in the API responses. For example, "Zqdm" means "stock code" (股票代码).
+
+    Args:
+        keys: Comma-separated abbreviation keys to look up.
+              If empty, returns all abbreviations.
+              Example: "Zqdm,Zqmc" looks up stock code and stock name abbreviations.
+
+    Returns:
+        Dictionary containing the abbreviation mappings for the specified keys.
+        Each key maps to a dictionary with "name" (Chinese) and "description" (English).
+
+    Examples:
+        # Get all abbreviations
+        query_abbrs()
+
+        # Get specific abbreviations
+        query_abbrs("Zqdm,Zqmc,Wtsl")
+    """
+    try:
+        client = get_client()
+
+        # Parse keys from comma-separated string
+        key_list = [k.strip() for k in keys.split(",")] if keys else []
+
+        # Call the original method with unpacked keys
+        result = client.query_abbrs(*key_list)
+        return result
+    except EmtlException as e:
+        return {"error": str(e)}
+    except ValueError as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
 def query_history_orders(
     size: int = 100,
     start_time: str = "",

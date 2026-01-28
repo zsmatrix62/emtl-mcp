@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "fastmcp>=0.1.0",
     # Production: use Git version
-    # Development: comment out the line below and use: uv pip install -e /Users/kylehuang/dev/emtl
+    # Development: comment out the line below and use: uv pip install -e ~/dev/emtl
     "emtl @ git+https://github.com/zsmatrix62/emtl.git",
 ]
 
@@ -28,4 +28,4 @@ allow-direct-references = true
 dev-dependencies = []
 
 # Development mode: install local emtl
-# Run: uv pip install -e /Users/kylehuang/dev/emtl
+# Run: uv pip install -e ~/dev/emtl
