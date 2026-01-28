@@ -8,3 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+
+# EMT cache
+emtl-cache/
+*.meta
+*.pkl

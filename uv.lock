@@ -439,8 +439,7 @@ wheels = [
 
 [[package]]
 name = "emtl"
-version = "0.2.7.dev1"
-source = { git = "https://github.com/zsmatrix62/emtl.git#7e6651dd44a0caafe77da5cf2c43573ccd2573fb" }
+source = { editable = "../emtl" }
 dependencies = [
     { name = "cryptography" },
     { name = "ddddocr" },
@@ -448,6 +447,18 @@ dependencies = [
     { name = "requests" },
     { name = "rsa" },
 ]
+
+[package.metadata]
+requires-dist = [
+    { name = "cryptography", specifier = "==42.0.5" },
+    { name = "ddddocr", specifier = "==1.4.11" },
+    { name = "dill", specifier = "==0.3.9" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0" },
+    { name = "requests", specifier = "==2.31.0" },
+    { name = "rsa", specifier = "==4.9" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "emtl-mcp"
@@ -460,7 +471,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "emtl", git = "https://github.com/zsmatrix62/emtl.git" },
+    { name = "emtl", editable = "../emtl" },
     { name = "fastmcp", specifier = ">=0.1.0" },
 ]
 

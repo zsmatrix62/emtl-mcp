@@ -14,6 +14,15 @@ from fastmcp import FastMCP
 mcp = FastMCP("EMTL - East Money Trading Library")
 
 
+class EMTStatusError(EmtlException):
+    """Exception raised when EMT API returns a non-zero status."""
+
+    def __init__(self, status: int, message: str | None = None):
+        self.status = status
+        self.message = message or f"EMT API returned status: {status}"
+        super().__init__(self.message)
+
+
 def get_credentials() -> tuple[str, str]:
     """Get credentials from environment variables.
 
@@ -66,13 +75,16 @@ def _extract_data(response: dict[str, Any] | None) -> Any:
 
     EMT API returns:
     - {"Status": 0, "Data": [...]}  on success
-    - {"Status": -1, "Message": "..."} on error
+    - {"Status": !=0, "Message": "..."} on error
 
     Args:
         response: Raw response from EMT API
 
     Returns:
-        The Data field if Status is 0, otherwise the error response
+        The Data field if Status is 0
+
+    Raises:
+        EMTStatusError: If Status is not 0
     """
     if response is None:
         return None
@@ -80,14 +92,13 @@ def _extract_data(response: dict[str, Any] | None) -> Any:
     # If response has Status field, check it
     if "Status" in response:
         status = response.get("Status")
-        # Status: 0 = success, -1 = error
+        # Status: 0 = success, any other value = error
         if status == 0:
             return response.get("Data")
-        elif status == -1:
-            return {
-                "error": response.get("Message", "Unknown error"),
-                "status": -1
-            }
+        else:
+            # Raise error for non-zero status
+            message = response.get("Message")
+            raise EMTStatusError(status, message)
 
     # Return as-is if no Status field
     return response
@@ -99,20 +110,19 @@ def query_asset_and_position() -> dict[str, Any]:
 
     Returns:
         Dictionary containing account assets and position information
-    """
-    try:
-        client = get_client()
-        result = client.query_asset_and_position()
-        data = _extract_data(result)
 
-        # Handle case where Data is a list with single element
-        if isinstance(data, list) and len(data) > 0:
-            return data[0] if isinstance(data[0], dict) else {}
-        return data if isinstance(data, dict) else {}
-    except EmtlException as e:
-        return {"error": str(e)}
-    except ValueError as e:
-        return {"error": str(e)}
+    Raises:
+        EMTStatusError: If EMT API returns an error status
+        ValueError: If credentials are not configured
+    """
+    client = get_client()
+    result = client.query_asset_and_position()
+    data = _extract_data(result)
+
+    # Handle case where Data is a list with single element
+    if isinstance(data, list) and len(data) > 0:
+        return data[0] if isinstance(data[0], dict) else {}
+    return data if isinstance(data, dict) else {}
 
 
 @mcp.tool
@@ -121,16 +131,15 @@ def query_orders() -> list[dict[str, Any]]:
 
     Returns:
         List of current pending orders
+
+    Raises:
+        EMTStatusError: If EMT API returns an error status
+        ValueError: If credentials are not configured
     """
-    try:
-        client = get_client()
-        result = client.query_orders()
-        data = _extract_data(result)
-        return data if isinstance(data, list) else []
-    except EmtlException as e:
-        return [{"error": str(e)}]
-    except ValueError as e:
-        return [{"error": str(e)}]
+    client = get_client()
+    result = client.query_orders()
+    data = _extract_data(result)
+    return data if isinstance(data, list) else []
 
 
 @mcp.tool
@@ -139,16 +148,15 @@ def query_trades() -> list[dict[str, Any]]:
 
     Returns:
         List of trade records
+
+    Raises:
+        EMTStatusError: If EMT API returns an error status
+        ValueError: If credentials are not configured
     """
-    try:
-        client = get_client()
-        result = client.query_trades()
-        data = _extract_data(result)
-        return data if isinstance(data, list) else []
-    except EmtlException as e:
-        return [{"error": str(e)}]
-    except ValueError as e:
-        return [{"error": str(e)}]
+    client = get_client()
+    result = client.query_trades()
+    data = _extract_data(result)
+    return data if isinstance(data, list) else []
 
 
 @mcp.tool
@@ -167,6 +175,10 @@ def query_abbrs(keys: str = "") -> dict[str, Any]:
         Dictionary containing the abbreviation mappings for the specified keys.
         Each key maps to a dictionary with "name" (Chinese) and "description" (English).
 
+    Raises:
+        EMTStatusError: If EMT API returns an error status
+        ValueError: If credentials are not configured
+
     Examples:
         # Get all abbreviations
         query_abbrs()
@@ -174,19 +186,14 @@ def query_abbrs(keys: str = "") -> dict[str, Any]:
         # Get specific abbreviations
         query_abbrs("Zqdm,Zqmc,Wtsl")
     """
-    try:
-        client = get_client()
+    client = get_client()
 
-        # Parse keys from comma-separated string
-        key_list = [k.strip() for k in keys.split(",")] if keys else []
+    # Parse keys from comma-separated string
+    key_list = [k.strip() for k in keys.split(",")] if keys else []
 
-        # Call the original method with unpacked keys
-        result = client.query_abbrs(*key_list)
-        return result
-    except EmtlException as e:
-        return {"error": str(e)}
-    except ValueError as e:
-        return {"error": str(e)}
+    # Call the original method with unpacked keys
+    result = client.query_abbrs(*key_list)
+    return result
 
 
 @mcp.tool
@@ -199,28 +206,27 @@ def query_history_orders(
 
     Args:
         size: Number of records to query (default: 100)
-        start_time: Start time in format "YYYY-MM-DD" (default: 30 days ago)
+        start_time: Start time in format "YYYY-MM-DD" (default: today)
         end_time: End time in format "YYYY-MM-DD" (default: today)
 
     Returns:
         List of historical orders
+
+    Raises:
+        EMTStatusError: If EMT API returns an error status
+        ValueError: If credentials are not configured
     """
-    try:
-        client = get_client()
+    client = get_client()
 
-        # Set default dates if not provided
-        if not start_time:
-            start_time = (datetime.now()).strftime("%Y-%m-%d")
-        if not end_time:
-            end_time = (datetime.now()).strftime("%Y-%m-%d")
+    # Set default dates if not provided
+    if not start_time:
+        start_time = (datetime.now()).strftime("%Y-%m-%d")
+    if not end_time:
+        end_time = (datetime.now()).strftime("%Y-%m-%d")
 
-        result = client.query_history_orders(size, start_time, end_time)
-        data = _extract_data(result)
-        return data if isinstance(data, list) else []
-    except EmtlException as e:
-        return [{"error": str(e)}]
-    except ValueError as e:
-        return [{"error": str(e)}]
+    result = client.query_history_orders(size, start_time, end_time)
+    data = _extract_data(result)
+    return data if isinstance(data, list) else []
 
 
 @mcp.tool
@@ -233,28 +239,27 @@ def query_history_trades(
 
     Args:
         size: Number of records to query (default: 100)
-        start_time: Start time in format "YYYY-MM-DD" (default: 30 days ago)
+        start_time: Start time in format "YYYY-MM-DD" (default: today)
         end_time: End time in format "YYYY-MM-DD" (default: today)
 
     Returns:
         List of historical trades
+
+    Raises:
+        EMTStatusError: If EMT API returns an error status
+        ValueError: If credentials are not configured
     """
-    try:
-        client = get_client()
+    client = get_client()
 
-        # Set default dates if not provided
-        if not start_time:
-            start_time = (datetime.now()).strftime("%Y-%m-%d")
-        if not end_time:
-            end_time = (datetime.now()).strftime("%Y-%m-%d")
+    # Set default dates if not provided
+    if not start_time:
+        start_time = (datetime.now()).strftime("%Y-%m-%d")
+    if not end_time:
+        end_time = (datetime.now()).strftime("%Y-%m-%d")
 
-        result = client.query_history_trades(size, start_time, end_time)
-        data = _extract_data(result)
-        return data if isinstance(data, list) else []
-    except EmtlException as e:
-        return [{"error": str(e)}]
-    except ValueError as e:
-        return [{"error": str(e)}]
+    result = client.query_history_trades(size, start_time, end_time)
+    data = _extract_data(result)
+    return data if isinstance(data, list) else []
 
 
 @mcp.tool
@@ -267,28 +272,27 @@ def query_funds_flow(
 
     Args:
         size: Number of records to query (default: 100)
-        start_time: Start time in format "YYYY-MM-DD" (default: 30 days ago)
+        start_time: Start time in format "YYYY-MM-DD" (default: today)
         end_time: End time in format "YYYY-MM-DD" (default: today)
 
     Returns:
         List of funds flow records
+
+    Raises:
+        EMTStatusError: If EMT API returns an error status
+        ValueError: If credentials are not configured
     """
-    try:
-        client = get_client()
+    client = get_client()
 
-        # Set default dates if not provided
-        if not start_time:
-            start_time = (datetime.now()).strftime("%Y-%m-%d")
-        if not end_time:
-            end_time = (datetime.now()).strftime("%Y-%m-%d")
+    # Set default dates if not provided
+    if not start_time:
+        start_time = (datetime.now()).strftime("%Y-%m-%d")
+    if not end_time:
+        end_time = (datetime.now()).strftime("%Y-%m-%d")
 
-        result = client.query_funds_flow(size, start_time, end_time)
-        data = _extract_data(result)
-        return data if isinstance(data, list) else []
-    except EmtlException as e:
-        return [{"error": str(e)}]
-    except ValueError as e:
-        return [{"error": str(e)}]
+    result = client.query_funds_flow(size, start_time, end_time)
+    data = _extract_data(result)
+    return data if isinstance(data, list) else []
 
 
 @mcp.tool
@@ -310,15 +314,14 @@ def create_order(
 
     Returns:
         Order creation result
+
+    Raises:
+        EMTStatusError: If EMT API returns an error status
+        ValueError: If credentials are not configured
     """
-    try:
-        client = get_client()
-        result = client.create_order(stock_code, trade_type, market, price, amount)
-        return _extract_data(result) or {}
-    except EmtlException as e:
-        return {"error": str(e)}
-    except ValueError as e:
-        return {"error": str(e)}
+    client = get_client()
+    result = client.create_order(stock_code, trade_type, market, price, amount)
+    return _extract_data(result) or {}
 
 
 @mcp.tool
@@ -330,15 +333,14 @@ def cancel_order(order_str: str) -> dict[str, Any]:
 
     Returns:
         Order cancellation result
+
+    Raises:
+        EMTStatusError: If EMT API returns an error status
+        ValueError: If credentials are not configured
     """
-    try:
-        client = get_client()
-        result = client.cancel_order(order_str)
-        return _extract_data(result) or {}
-    except EmtlException as e:
-        return {"error": str(e)}
-    except ValueError as e:
-        return {"error": str(e)}
+    client = get_client()
+    result = client.cancel_order(order_str)
+    return _extract_data(result) or {}
 
 
 def main():
