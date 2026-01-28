@@ -1,0 +1,31 @@
+[project]
+name = "emtl-mcp"
+version = "0.1.0"
+description = "MCP server for East Money trading library (emtl) - provides access to 东方财富持仓和历史交易数据"
+readme = "README.md"
+authors = [
+    { name = "Kyle", email = "zs.matrix62@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=0.1.0",
+    # Production: use Git version
+    # Development: comment out the line below and use: uv pip install -e /Users/kylehuang/dev/emtl
+    "emtl @ git+https://github.com/zsmatrix62/emtl.git",
+]
+
+[project.scripts]
+emtl-mcp = "emtl_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.uv]
+dev-dependencies = []
+
+# Development mode: install local emtl
+# Run: uv pip install -e /Users/kylehuang/dev/emtl
