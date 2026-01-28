@@ -4,12 +4,12 @@ MCP server for [East Money Trading Library (emtl)](https://github.com/zsmatrix62
 
 ## Features
 
-- **Account Management**: Login to East Money trading platform
 - **Asset Queries**: Query account assets and positions
 - **Order Management**: Query current orders, create and cancel orders
 - **Trade History**: Query historical orders and trades
 - **Funds Flow**: Query funds flow records
 - **Secure Credentials**: Credentials stored in MCP config, never passed to LLM
+- **Auto Login**: Client automatically logs in on first use
 
 ## Installation
 
@@ -156,12 +156,7 @@ Add to Cline settings:
 
 All tools use credentials configured in the MCP server environment. No need to pass username/password to the LLM.
 
-### Authentication
-
-#### `login(duration=180)`
-Login to East Money trading platform using configured credentials.
-
-**Note**: This tool is provided for testing. The client automatically logs in when you use any other tool.
+The client automatically logs in when you call any tool for the first time.
 
 ### Query Functions
 
@@ -230,6 +225,7 @@ uv run python -m emtl_mcp.server
 - ✅ **Credentials are stored in MCP configuration** - never passed to LLM
 - ✅ **Sessions are cached** - reduces login frequency
 - ✅ **Cache is stored locally** - in `EMTL_STORAGE_DIR` directory
+- ✅ **Auto login on first use** - no manual login required
 - ⚠️ **Never share your Claude settings file** - it contains your credentials
 - ⚠️ **Use environment variables** - don't hardcode credentials in code
 

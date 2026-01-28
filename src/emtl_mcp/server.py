@@ -94,31 +94,6 @@ def _extract_data(response: dict[str, Any] | None) -> Any:
 
 
 @mcp.tool
-def login(duration: int = 180) -> str:
-    """Login to East Money trading platform using configured credentials.
-
-    Note: This tool is provided for testing. The client automatically logs in
-    when you use any other tool. You don't need to call this explicitly.
-
-    Args:
-        duration: Session duration in minutes (default: 180)
-
-    Returns:
-        Login status message
-    """
-    try:
-        username, _ = get_credentials()
-        client = get_client()
-        return f"Successfully logged in as {username}"
-    except LoginFailedError as e:
-        return f"Login failed: {e}"
-    except EmtlException as e:
-        return f"Error: {e}"
-    except ValueError as e:
-        return f"Configuration error: {e}"
-
-
-@mcp.tool
 def query_asset_and_position() -> dict[str, Any]:
     """Query account assets and positions.
 
