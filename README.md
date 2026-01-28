@@ -9,7 +9,6 @@ MCP server for [East Money Trading Library (emtl)](https://github.com/zsmatrix62
 - **Order Management**: Query current orders, create and cancel orders
 - **Trade History**: Query historical orders and trades
 - **Funds Flow**: Query funds flow records
-- **Real-time Quotes**: Get latest stock prices
 - **Secure Credentials**: Credentials stored in MCP config, never passed to LLM
 
 ## Installation
@@ -169,6 +168,10 @@ Login to East Money trading platform using configured credentials.
 #### `query_asset_and_position()`
 Query account assets and positions.
 
+Returns a dictionary containing:
+- Account summary (total assets, available funds, etc.)
+- List of stock positions
+
 #### `query_orders()`
 Query current pending orders.
 
@@ -201,11 +204,6 @@ Create a new order.
 
 #### `cancel_order(order_str)`
 Cancel an existing order.
-
-### Quote Functions
-
-#### `get_last_price(symbol_code, market)`
-Get the latest stock price.
 
 ## Development
 

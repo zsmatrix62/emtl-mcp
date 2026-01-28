@@ -61,6 +61,38 @@ def get_client() -> Any:
     return manager.get_client(username, password)
 
 
+def _extract_data(response: dict[str, Any] | None) -> Any:
+    """Extract data from EMT API response.
+
+    EMT API returns:
+    - {"Status": 0, "Data": [...]}  on success
+    - {"Status": -1, "Message": "..."} on error
+
+    Args:
+        response: Raw response from EMT API
+
+    Returns:
+        The Data field if Status is 0, otherwise the error response
+    """
+    if response is None:
+        return None
+
+    # If response has Status field, check it
+    if "Status" in response:
+        status = response.get("Status")
+        # Status: 0 = success, -1 = error
+        if status == 0:
+            return response.get("Data")
+        elif status == -1:
+            return {
+                "error": response.get("Message", "Unknown error"),
+                "status": -1
+            }
+
+    # Return as-is if no Status field
+    return response
+
+
 @mcp.tool
 def login(duration: int = 180) -> str:
     """Login to East Money trading platform using configured credentials.
@@ -96,7 +128,12 @@ def query_asset_and_position() -> dict[str, Any]:
     try:
         client = get_client()
         result = client.query_asset_and_position()
-        return result
+        data = _extract_data(result)
+
+        # Handle case where Data is a list with single element
+        if isinstance(data, list) and len(data) > 0:
+            return data[0] if isinstance(data[0], dict) else {}
+        return data if isinstance(data, dict) else {}
     except EmtlException as e:
         return {"error": str(e)}
     except ValueError as e:
@@ -113,7 +150,8 @@ def query_orders() -> list[dict[str, Any]]:
     try:
         client = get_client()
         result = client.query_orders()
-        return result
+        data = _extract_data(result)
+        return data if isinstance(data, list) else []
     except EmtlException as e:
         return [{"error": str(e)}]
     except ValueError as e:
@@ -130,7 +168,8 @@ def query_trades() -> list[dict[str, Any]]:
     try:
         client = get_client()
         result = client.query_trades()
-        return result
+        data = _extract_data(result)
+        return data if isinstance(data, list) else []
     except EmtlException as e:
         return [{"error": str(e)}]
     except ValueError as e:
@@ -163,7 +202,8 @@ def query_history_orders(
             end_time = (datetime.now()).strftime("%Y-%m-%d")
 
         result = client.query_history_orders(size, start_time, end_time)
-        return result
+        data = _extract_data(result)
+        return data if isinstance(data, list) else []
     except EmtlException as e:
         return [{"error": str(e)}]
     except ValueError as e:
@@ -196,7 +236,8 @@ def query_history_trades(
             end_time = (datetime.now()).strftime("%Y-%m-%d")
 
         result = client.query_history_trades(size, start_time, end_time)
-        return result
+        data = _extract_data(result)
+        return data if isinstance(data, list) else []
     except EmtlException as e:
         return [{"error": str(e)}]
     except ValueError as e:
@@ -229,7 +270,8 @@ def query_funds_flow(
             end_time = (datetime.now()).strftime("%Y-%m-%d")
 
         result = client.query_funds_flow(size, start_time, end_time)
-        return result
+        data = _extract_data(result)
+        return data if isinstance(data, list) else []
     except EmtlException as e:
         return [{"error": str(e)}]
     except ValueError as e:
@@ -259,7 +301,7 @@ def create_order(
     try:
         client = get_client()
         result = client.create_order(stock_code, trade_type, market, price, amount)
-        return result
+        return _extract_data(result) or {}
     except EmtlException as e:
         return {"error": str(e)}
     except ValueError as e:
@@ -279,28 +321,7 @@ def cancel_order(order_str: str) -> dict[str, Any]:
     try:
         client = get_client()
         result = client.cancel_order(order_str)
-        return result
-    except EmtlException as e:
-        return {"error": str(e)}
-    except ValueError as e:
-        return {"error": str(e)}
-
-
-@mcp.tool
-def get_last_price(symbol_code: str, market: str) -> dict[str, Any]:
-    """Get the latest stock price.
-
-    Args:
-        symbol_code: Stock symbol code
-        market: Market code
-
-    Returns:
-        Latest stock price information
-    """
-    try:
-        client = get_client()
-        result = client.get_last_price(symbol_code, market)
-        return result
+        return _extract_data(result) or {}
     except EmtlException as e:
         return {"error": str(e)}
     except ValueError as e:
