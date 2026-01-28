@@ -14,7 +14,7 @@ MCP 服务器，用于 [East Money Trading Library (emtl)](https://github.com/zs
 
 ## 安装
 
-### 生产环境（从 Git 安装）
+### 作为 MCP 服务器使用（从 Git 安装）
 
 使用 `uvx` 通过 Git URL 安装：
 
@@ -30,6 +30,29 @@ cd emtl-mcp
 uv run python -m emtl_mcp.server
 ```
 
+### 作为标准 Python 库使用
+
+从 Git 安装：
+
+```bash
+pip install git+https://github.com/your-org/emtl-mcp.git
+```
+
+或使用 uv：
+
+```bash
+uv pip install git+https://github.com/your-org/emtl-mcp.git
+```
+
+然后在代码中导入使用：
+
+```python
+from emtl_mcp import mcp
+
+# 使用 MCP 服务器实例
+mcp.run()
+```
+
 ### 本地开发
 
 ```bash
@@ -41,7 +64,7 @@ cd emtl-mcp
 uv sync
 
 # 安装本地 emtl 开发版本
-uv pip install -e ~/dev/emtl
+uv pip install -e /Users/kylehuang/dev/emtl
 
 # 运行服务器
 uv run python -m emtl_mcp.server
@@ -74,7 +97,7 @@ uv run python -m emtl_mcp.server
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/zsmatrix62/emtl-mcp.git",
+        "git+https://github.com/your-org/emtl-mcp.git",
         "emtl-mcp"
       ],
       "env": {
@@ -95,7 +118,7 @@ uv run python -m emtl_mcp.server
       "command": "uv",
       "args": [
         "--directory",
-        "~/dev/emtl-mcp",
+        "/Users/kylehuang/dev/emtl-mcp",
         "run",
         "python",
         "-m",
@@ -189,12 +212,29 @@ query_abbrs("Zqdm,Zqmc,Wtsl")
 
 撤销现有订单。
 
+## 作为 Python 库使用
+
+安装后，您可以在 Python 代码中导入和使用：
+
+```python
+from emtl_mcp import mcp
+from emtl_mcp.server import get_client, query_asset_and_position
+
+# 方式1: 直接使用 MCP 服务器
+mcp.run()
+
+# 方式2: 在代码中调用工具函数
+client = get_client()
+result = client.query_asset_and_position()
+print(result)
+```
+
 ## 开发
 
 ### 测试服务器
 
 ```bash
-cd ~/dev/emtl-mcp
+cd /Users/kylehuang/dev/emtl-mcp
 ./test_mcp.sh
 ```
 
@@ -217,13 +257,3 @@ uv run python -m emtl_mcp.server
 - ✅ **首次使用时自动登录** - 无需手动登录
 - ⚠️ **切勿分享您的 Claude 设置文件** - 其中包含您的凭证
 - ⚠️ **使用环境变量** - 不要在代码中硬编码凭证
-
-## 许可证
-
-MIT
-
-## 相关链接
-
-- [emtl 库](https://github.com/zsmatrix62/emtl)
-- [FastMCP](https://github.com/jlowin/fastmcp)
-- [Model Context Protocol](https://modelcontextprotocol.io)
